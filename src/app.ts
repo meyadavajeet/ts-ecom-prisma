@@ -1,12 +1,25 @@
 import express, { Express, Request, Response } from "express";
+import morgan from "morgan";
+import helmet from "helmet";
 import { PORT } from "./configs/secrets";
+import startupRoutes from "./routes";
+import { PrismaClient } from "@prisma/client";
 
 const app: Express = express();
 
 app.use(express.json());
+app.use(morgan("dev"));
+app.use(helmet());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
+});
+
+app.use("/api/v1/", startupRoutes);
+
+// prisma client
+export const prismaClient = new PrismaClient({
+  log: ["query"],
 });
 
 app.listen(PORT, () => {
