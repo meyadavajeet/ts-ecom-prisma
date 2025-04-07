@@ -7,7 +7,8 @@ import { BadRequestException } from "../exceptions/badrequest.exceptions";
 import { ErrorCode } from "../exceptions/root.exceptions";
 import { InternalServerException } from "../exceptions/internalserver.exceptions";
 import { UnprocessableEntity } from "../exceptions/validation.exception";
-import { SignupSchema } from "../schema/user";
+import { LoginSchema, SignupSchema } from "../schema/user";
+import { NotFoundException } from "../exceptions/notfound.exceptions";
 
 interface SingupRequestBody {
   name: string;
@@ -62,25 +63,13 @@ export const signin = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  LoginSchema.parse(req.body);
   const { email, password } = req.body;
-  if (!email || !password) {
-    next(
-      new BadRequestException(
-        "Email and password are required.",
-        ErrorCode.MISSING_REQUIRED_FIELDS
-      )
-    );
-  }
   const isUserRegistered = await prismaClient.user.findFirst({
     where: { email },
   });
   if (!isUserRegistered) {
-    next(
-      new BadRequestException(
-        "Invalid email or password.",
-        ErrorCode.INVALID_CREDENTIALS
-      )
-    );
+    next(new NotFoundException("User not found.", ErrorCode.USER_NOT_FOUND));
     return;
   }
   const isPasswordValid = await bcrypt.compare(
@@ -94,6 +83,7 @@ export const signin = async (
         ErrorCode.INVALID_CREDENTIALS
       )
     );
+    return;
   }
   // Optionally omit the password field in response
   const { password: _, ...userWithoutPassword } = isUserRegistered;
