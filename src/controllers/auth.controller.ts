@@ -23,51 +23,38 @@ export const signup = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    // Validate request body using Zod schema
-    SignupSchema.parse(req.body);
-    // get the data from the request body
-    const { name, email, password } = req.body;
+  // Validate request body using Zod schema
+  SignupSchema.parse(req.body);
+  // get the data from the request body
+  const { name, email, password } = req.body;
 
-    // Check if the user already exists
-    const existingUser = await prismaClient.user.findFirst({
-      where: { email },
-    });
-    if (existingUser) {
-      next(
-        new BadRequestException(
-          "User already exists.",
-          ErrorCode.USER_ALREADY_EXISTS
-        )
-      );
-      return;
-    }
-
-    // Create new user
-    const hashedPassword = await bcrypt.hash(String(password), 10);
-    const newUser = await prismaClient.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
-
-    // Optionally omit the password field in response
-    const { password: _, ...userWithoutPassword } = newUser;
-
-    res.status(201).json(userWithoutPassword);
-  } catch (error: any) {
-    console.error("Signup Error:", error);
-    // res.status(500).json({ error: error });
+  // Check if the user already exists
+  const existingUser = await prismaClient.user.findFirst({
+    where: { email },
+  });
+  if (existingUser) {
     next(
-      new UnprocessableEntity(
-        error?.issues,
-        "Unprocessable Entity",
-        ErrorCode.UNPROCESSABLE_ENTITY
+      new BadRequestException(
+        "User already exists.",
+        ErrorCode.USER_ALREADY_EXISTS
       )
     );
+    return;
   }
+
+  // Create new user
+  const hashedPassword = await bcrypt.hash(String(password), 10);
+  const newUser = await prismaClient.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+    },
+  });
+
+  // Optionally omit the password field in response
+  const { password: _, ...userWithoutPassword } = newUser;
+  res.status(201).json(userWithoutPassword);
 };
 
 export const signin = async (
@@ -75,53 +62,48 @@ export const signin = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      next(
-        new BadRequestException(
-          "Email and password are required.",
-          ErrorCode.MISSING_REQUIRED_FIELDS
-        )
-      );
-    }
-    const isUserRegistered = await prismaClient.user.findFirst({
-      where: { email },
-    });
-    if (!isUserRegistered) {
-      next(
-        new BadRequestException(
-          "Invalid email or password.",
-          ErrorCode.INVALID_CREDENTIALS
-        )
-      );
-      return;
-    }
-    const isPasswordValid = await bcrypt.compare(
-      password.toString(),
-      isUserRegistered.password!
+  const { email, password } = req.body;
+  if (!email || !password) {
+    next(
+      new BadRequestException(
+        "Email and password are required.",
+        ErrorCode.MISSING_REQUIRED_FIELDS
+      )
     );
-    if (!isPasswordValid) {
-      next(
-        new BadRequestException(
-          "Invalid email or password.",
-          ErrorCode.INVALID_CREDENTIALS
-        )
-      );
-    }
-    // Optionally omit the password field in response
-    const { password: _, ...userWithoutPassword } = isUserRegistered;
-
-    // Generate JWT token (optional)
-    const token = jwt.sign({ id: isUserRegistered.id }, JWT_SECRET, {
-      expiresIn: "24h",
-    });
-    // res.cookie("token", token, { httpOnly: true, secure: true });
-    res
-      .status(200)
-      .json({ message: "Login successful", user: userWithoutPassword, token });
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ error: error });
   }
+  const isUserRegistered = await prismaClient.user.findFirst({
+    where: { email },
+  });
+  if (!isUserRegistered) {
+    next(
+      new BadRequestException(
+        "Invalid email or password.",
+        ErrorCode.INVALID_CREDENTIALS
+      )
+    );
+    return;
+  }
+  const isPasswordValid = await bcrypt.compare(
+    password.toString(),
+    isUserRegistered.password!
+  );
+  if (!isPasswordValid) {
+    next(
+      new BadRequestException(
+        "Invalid email or password.",
+        ErrorCode.INVALID_CREDENTIALS
+      )
+    );
+  }
+  // Optionally omit the password field in response
+  const { password: _, ...userWithoutPassword } = isUserRegistered;
+
+  // Generate JWT token (optional)
+  const token = jwt.sign({ id: isUserRegistered.id }, JWT_SECRET, {
+    expiresIn: "24h",
+  });
+  // res.cookie("token", token, { httpOnly: true, secure: true });
+  res
+    .status(200)
+    .json({ message: "Login successful", user: userWithoutPassword, token });
 };
