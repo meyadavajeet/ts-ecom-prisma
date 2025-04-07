@@ -4,6 +4,8 @@ import helmet from "helmet";
 import { PORT } from "./configs/secrets";
 import startupRoutes from "./routes";
 import { PrismaClient } from "@prisma/client";
+import { errorMiddleware } from "./middlewares/error.middleware";
+import { SignupSchema } from "./schema/user";
 
 const app: Express = express();
 
@@ -21,6 +23,10 @@ app.use("/api/v1/", startupRoutes);
 export const prismaClient = new PrismaClient({
   log: ["query"],
 });
+
+// Handle errors
+// This should be the last middleware
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

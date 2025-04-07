@@ -1,8 +1,13 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { prismaClient } from "../app";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../configs/secrets";
+import { BadRequestException } from "../exceptions/badrequest.exceptions";
+import { ErrorCode } from "../exceptions/root.exceptions";
+import { InternalServerException } from "../exceptions/internalserver.exceptions";
+import { UnprocessableEntity } from "../exceptions/validation.exception";
+import { SignupSchema } from "../schema/user";
 
 interface SingupRequestBody {
   name: string;
@@ -15,25 +20,26 @@ interface LoginRequestBody {
 }
 export const signup = async (
   req: Request<{}, {}, SingupRequestBody>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
+    // Validate request body using Zod schema
+    SignupSchema.parse(req.body);
     // get the data from the request body
     const { name, email, password } = req.body;
-    // Basic validation (optional)
-    if (!name || !email || !password) {
-      res
-        .status(400)
-        .json({ error: "Name, email, and password are required." });
-      return;
-    }
 
     // Check if the user already exists
     const existingUser = await prismaClient.user.findFirst({
       where: { email },
     });
     if (existingUser) {
-      res.status(409).json({ error: "User already exists." });
+      next(
+        new BadRequestException(
+          "User already exists.",
+          ErrorCode.USER_ALREADY_EXISTS
+        )
+      );
       return;
     }
 
@@ -51,27 +57,44 @@ export const signup = async (
     const { password: _, ...userWithoutPassword } = newUser;
 
     res.status(201).json(userWithoutPassword);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Signup Error:", error);
-    res.status(500).json({ error: "Internal server error." });
+    // res.status(500).json({ error: error });
+    next(
+      new UnprocessableEntity(
+        error?.issues,
+        "Unprocessable Entity",
+        ErrorCode.UNPROCESSABLE_ENTITY
+      )
+    );
   }
 };
 
 export const signin = async (
   req: Request<{}, {}, LoginRequestBody>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({ error: "Email and password are required." });
-      return;
+      next(
+        new BadRequestException(
+          "Email and password are required.",
+          ErrorCode.MISSING_REQUIRED_FIELDS
+        )
+      );
     }
     const isUserRegistered = await prismaClient.user.findFirst({
       where: { email },
     });
     if (!isUserRegistered) {
-      res.status(401).json({ error: "Invalid email or password." });
+      next(
+        new BadRequestException(
+          "Invalid email or password.",
+          ErrorCode.INVALID_CREDENTIALS
+        )
+      );
       return;
     }
     const isPasswordValid = await bcrypt.compare(
@@ -79,7 +102,12 @@ export const signin = async (
       isUserRegistered.password!
     );
     if (!isPasswordValid) {
-      res.status(401).json({ error: "Invalid email or password." });
+      next(
+        new BadRequestException(
+          "Invalid email or password.",
+          ErrorCode.INVALID_CREDENTIALS
+        )
+      );
     }
     // Optionally omit the password field in response
     const { password: _, ...userWithoutPassword } = isUserRegistered;
@@ -94,6 +122,6 @@ export const signin = async (
       .json({ message: "Login successful", user: userWithoutPassword, token });
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ error: "Internal server error." });
+    res.status(500).json({ error: error });
   }
 };

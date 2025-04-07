@@ -1,0 +1,51 @@
+// message, status code , error code, error message
+
+export class HTTPException extends Error {
+  statusCode: number;
+  errorCode: ErrorCode;
+  errorMessage: string;
+  error: string | null;
+
+  constructor(
+    statusCode: number,
+    errorCode: ErrorCode,
+    errorMessage: string,
+    error: string | null = null
+  ) {
+    super(errorMessage);
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.errorMessage = errorMessage;
+    this.error = error;
+  }
+}
+
+export enum ErrorCode {
+  USER_NOT_FOUND = "USER_NOT_FOUND",
+  INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
+  USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS",
+  INVALID_TOKEN = "INVALID_TOKEN",
+  TOKEN_EXPIRED = "TOKEN_EXPIRED",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  FORBIDDEN = "FORBIDDEN",
+  BAD_REQUEST = "BAD_REQUEST",
+  NOT_FOUND = "NOT_FOUND",
+  INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
+  UNPROCESSABLE_ENTITY = "UNPROCESSABLE_ENTITY",
+  CONFLICT = "CONFLICT",
+  SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE",
+  GATEWAY_TIMEOUT = "GATEWAY_TIMEOUT",
+  METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED",
+  NOT_ACCEPTABLE = "NOT_ACCEPTABLE",
+  UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE",
+  TOO_MANY_REQUESTS = "TOO_MANY_REQUESTS",
+  PRECONDITION_FAILED = "PRECONDITION_FAILED",
+  LENGTH_REQUIRED = "LENGTH_REQUIRED",
+  EXPECTATION_FAILED = "EXPECTATION_FAILED",
+  MISSING_REQUIRED_FIELDS = "MISSING_REQUIRED_FIELDS",
+  INVALID_INPUT = "INVALID_INPUT",
+  INVALID_DATA = "INVALID_DATA",
+  INVALID_QUERY = "INVALID_QUERY",
+  INVALID_BODY = "INVALID_BODY",
+  INVALID_PARAMS = "INVALID_PARAMS",
+}
