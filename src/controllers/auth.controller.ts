@@ -34,13 +34,10 @@ export const signup = async (
     where: { email },
   });
   if (existingUser) {
-    next(
-      new BadRequestException(
+   throw new BadRequestException(
         "User already exists.",
         ErrorCode.USER_ALREADY_EXISTS
       )
-    );
-    return;
   }
 
   // Create new user
@@ -61,7 +58,7 @@ export const signup = async (
 export const signin = async (
   req: Request<{}, {}, LoginRequestBody>,
   res: Response,
-  next: NextFunction
+  next : NextFunction
 ): Promise<void> => {
   LoginSchema.parse(req.body);
   const { email, password } = req.body;
@@ -69,21 +66,17 @@ export const signin = async (
     where: { email },
   });
   if (!isUserRegistered) {
-    next(new NotFoundException("User not found.", ErrorCode.USER_NOT_FOUND));
-    return;
+   throw new NotFoundException("User not found.", ErrorCode.USER_NOT_FOUND);
   }
   const isPasswordValid = await bcrypt.compare(
     password.toString(),
     isUserRegistered.password!
   );
   if (!isPasswordValid) {
-    next(
-      new BadRequestException(
-        "Invalid email or password.",
-        ErrorCode.INVALID_CREDENTIALS
-      )
+    throw new BadRequestException(
+      "Invalid email or password.",
+      ErrorCode.INVALID_CREDENTIALS
     );
-    return;
   }
   // Optionally omit the password field in response
   const { password: _, ...userWithoutPassword } = isUserRegistered;
