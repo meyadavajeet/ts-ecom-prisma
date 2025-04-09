@@ -90,3 +90,19 @@ export const signin = async (
     .status(200)
     .json({ message: "Login successful", user: userWithoutPassword, token });
 };
+
+
+export const me = async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user;
+  if (!user) {
+    throw new NotFoundException(
+      "User not found.",
+      ErrorCode.USER_NOT_FOUND
+    );
+  }
+  // remove password from user object
+  const { password : _, ...userWithoutPassword } = user;
+  return res
+  .status(200)
+  .json({user: userWithoutPassword });
+}
