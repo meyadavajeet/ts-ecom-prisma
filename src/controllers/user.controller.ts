@@ -19,25 +19,13 @@ export const addAddress = async (
 ): Promise<void> => {
   // validate payload
   AddressSchema.parse(req.body);
-  const { lineOne, lineTwo, city, state, country, pinCode } = req.body;
-  // check if userId exist
-  if (!req?.user?.id) {
-    throw new UnAuthorizedException(
-      "User not authorized",
-      ErrorCode.UNAUTHORIZED,
-      "Please login to add address"
-    );
-  }
+  console.log(req.body);
+
   // create address
   const address = await prismaClient.address.create({
     data: {
-      lineOne,
-      lineTwo,
-      city,
-      state,
-      country,
-      pinCode,
-      userId: req?.user?.id,
+      ...req.body,
+      userId: req.user?.id,
     },
   });
   // return address
@@ -120,3 +108,25 @@ export const updateAddress = async (
   // return address
   res.status(200).json(address);
 };
+
+export const getAddressById = async (
+  req: Request<{ id: number }, {}, {}>,
+  res: Response
+): Promise<void> => {
+  // check if userId exist
+  if (!req?.user?.id) {
+    throw new UnAuthorizedException(
+      "User not authorized",
+      ErrorCode.UNAUTHORIZED,
+      "Please login to view address"
+    );
+  }
+  // get address by id
+  const address = await prismaClient.address.findFirstOrThrow({
+    where: {
+      id: req.params.id,
+    },
+  });
+  // return address
+  res.status(200).json(address);
+}

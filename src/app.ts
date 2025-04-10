@@ -21,7 +21,7 @@ app.use("/api/v1/", startupRoutes);
 
 // prisma client
 export const prismaClient = new PrismaClient({
-  log: ["query", "info", "warn", "error"],
+  log: ["query"],
 });
 
 // Handle errors
