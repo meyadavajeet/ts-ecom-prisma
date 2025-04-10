@@ -67,17 +67,17 @@ export const getProductById = async (
   req: Request<{ id: number }, {}, {}>,
   res: Response
 ): Promise<void> => {
-  const { id } = req.params;
-  if (!id) {
+  try {
+    const { id } = req.params;
+    const product = await prismaClient.product.findFirstOrThrow({
+      where: { id },
+    });
+
+    res.status(200).json(product);
+    
+  } catch (error) {
     throw new NotFoundException("Product not found", ErrorCode.NOT_FOUND);
   }
-  const product = await prismaClient.product.findFirst({
-    where: { id },
-  });
-  if (!product) {
-    throw new NotFoundException("Product not found", ErrorCode.NOT_FOUND);
-  }
-  res.status(200).json(product);
 };
 
 export const deleteProductById = async (
