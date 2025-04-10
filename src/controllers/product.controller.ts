@@ -30,8 +30,37 @@ export const getAllProducts = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const products = await prismaClient.product.findMany();
-  res.status(200).json(products);
+  // const products = await prismaClient.product.findMany();
+  // add pagination
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 1;
+  const skip = (page - 1) * limit;
+  const products = await prismaClient.product.findMany({
+    skip,
+    take: limit,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  const totalProducts = await prismaClient.product.count();
+  const totalPages = Math.ceil(totalProducts / limit);
+  const hasNextPage = page < totalPages;
+  const hasPreviousPage = page > 1;
+  const nextPage = hasNextPage ? page + 1 : null;
+  const previousPage = hasPreviousPage ? page - 1 : null;
+  const pagination = {
+    totalProducts,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    nextPage,
+    previousPage,
+  };
+  res.setHeader("X-Pagination", JSON.stringify(pagination));
+  res.status(200).json({
+    pagination,
+    products,
+  });
 };
 
 export const getProductById = async (
