@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { ErrorCode, HTTPException } from "./exceptions/root.exceptions";
 import { InternalServerException } from "./exceptions/internalserver.exceptions";
+import { ZodError } from "zod";
+import { BadRequestException } from "./exceptions/badrequest.exceptions";
 
 // Add this BigInt serialization utility
 const bigIntSerializer = () => {
@@ -22,11 +24,19 @@ export const errorHandler = (method: Function) => {
         exception = error;
       } else {
         console.log(error);
-        exception = new InternalServerException(
-          "Internal server error.",
-          ErrorCode.INTERNAL_SERVER_ERROR,
-          error
-        );
+        if (error instanceof ZodError) {
+          exception = new BadRequestException(
+            "Validation error.",
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            error
+          );
+        } else {
+          exception = new InternalServerException(
+            "Internal server error.",
+            ErrorCode.INTERNAL_SERVER_ERROR,
+            error
+          );
+        }
       }
       next(exception);
     }
