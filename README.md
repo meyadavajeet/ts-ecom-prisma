@@ -63,3 +63,8 @@ npx prisma migrate dev --name CreateUsersTable
 ```
 npm i dotenv
 ```
+
+# Run Prisma Studio Locally
+```
+npx prisma studio
+```
