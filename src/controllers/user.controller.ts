@@ -206,3 +206,82 @@ export const updateUser = async (
   });
   res.status(200).json(updateUser);
 };
+
+/**
+ *
+ * ADMIN CONTROLLERS
+ *
+ */
+export const getAllUsers = async (req: Request, res: Response) => {
+  const users = await prismaClient.user.findMany({
+    where: {
+      role: "USER",
+    },
+    skip: req.params.skip ? +req.params.skip : 0,
+    take: req.params.take ? +req.params.take : 10,
+  });
+  res.status(200).json(users);
+};
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!id) {
+    throw new NotFoundException("Please provide User ID", ErrorCode.NOT_FOUND);
+  }
+  try {
+    const user = await prismaClient.user.findFirstOrThrow({
+      where: {
+        id: +id,
+      },
+      include: {
+        Address: true,
+      },
+    });
+    res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    throw new NotFoundException("User not found", ErrorCode.NOT_FOUND);
+  }
+};
+
+export const changeUserRole = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!id) {
+    throw new NotFoundException("User not found", ErrorCode.NOT_FOUND);
+  }
+  if (!role) {
+    throw new BadRequestException("Role not provided", ErrorCode.BAD_REQUEST);
+  }
+  // role may be "USER" or "ADMIN"
+  if (role !== "USER" && role !== "ADMIN") {
+    throw new BadRequestException(
+      "Role must be either USER or ADMIN",
+      ErrorCode.BAD_REQUEST
+    );
+  }
+  // check if userId exist
+  try {
+    await prismaClient.user.findFirstOrThrow({
+      where: {
+        id: +id,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+    throw new NotFoundException("User not found", ErrorCode.NOT_FOUND);
+  }
+  const user = await prismaClient.user.update({
+    where: {
+      id: +id,
+    },
+    data: {
+      role,
+    },
+  });
+  res.status(200).json(user);
+};
+
+/**
+ * END OF ADMIN CONTROLLERS
+ */
