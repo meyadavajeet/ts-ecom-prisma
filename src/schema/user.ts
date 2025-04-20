@@ -19,3 +19,9 @@ export const AddressSchema = z.object({
   country : z.string().min(1).max(50),
   pinCode : z.string().min(6).max(6)
 });
+
+export const UpdateUserSchema = z.object({
+  name : z.string().optional(),
+  shippingAddress : z.number().optional(),
+  defaultAddress : z.number().optional()
+})

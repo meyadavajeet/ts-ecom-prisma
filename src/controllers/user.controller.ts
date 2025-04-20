@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
-import { AddressSchema } from "../schema/user";
+import { AddressSchema, UpdateUserSchema } from "../schema/user";
 import { prismaClient } from "../app";
 import { UnAuthorizedException } from "../exceptions/unauthorized.exceptions";
 import { ErrorCode } from "../exceptions/root.exceptions";
+import { Address } from "@prisma/client";
+import { NotFoundException } from "../exceptions/notfound.exceptions";
+import { BadRequestException } from "../exceptions/badrequest.exceptions";
 
 interface CreateAddressBody {
   lineOne: string;
@@ -11,6 +14,12 @@ interface CreateAddressBody {
   state: string;
   country: string;
   pinCode: string;
+}
+
+interface UpdateUserBody {
+  name: string | null;
+  shippingAddress: number | null;
+  defaultAddress: number | null;
 }
 
 export const addAddress = async (
@@ -129,4 +138,71 @@ export const getAddressById = async (
   });
   // return address
   res.status(200).json(address);
-}
+};
+
+export const updateUser = async (
+  req: Request<{}, {}, UpdateUserBody>,
+  res: Response
+): Promise<void> => {
+  if (!req?.user?.id) {
+    throw new UnAuthorizedException(
+      "User not authorized",
+      ErrorCode.UNAUTHORIZED,
+      "Please login to delete address"
+    );
+  }
+  const validateData = UpdateUserSchema.parse(req.body);
+  let shippingAddress: Address;
+  let defaultAddress: Address;
+  if (validateData.shippingAddress) {
+    try {
+      shippingAddress = await prismaClient.address.findFirstOrThrow({
+        where: {
+          id: +validateData.shippingAddress,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new NotFoundException("Address not found", ErrorCode.NOT_FOUND);
+    }
+    if (shippingAddress.userId != req.user.id) {
+      throw new BadRequestException(
+        "Address does not belongs to user",
+        ErrorCode.ADDRESS_DOES_NOT_BELONGS_TO_USER
+      );
+    }
+  }
+  if (validateData.defaultAddress) {
+    try {
+      defaultAddress = await prismaClient.address.findFirstOrThrow({
+        where: {
+          id: +validateData.defaultAddress,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new NotFoundException("Address not found", ErrorCode.NOT_FOUND);
+    }
+    if (defaultAddress.userId != req.user.id) {
+      throw new BadRequestException(
+        "Address does not belongs to user",
+        ErrorCode.ADDRESS_DOES_NOT_BELONGS_TO_USER
+      );
+    }
+  }
+  const updateUser = await prismaClient.user.update({
+    where: {
+      id: req.user.id,
+    },
+    data: {
+      name: validateData.name,
+      defaultAddress: validateData.defaultAddress
+        ? +validateData.defaultAddress
+        : null,
+      shippingAddress: validateData.shippingAddress
+        ? +validateData.shippingAddress
+        : null,
+    },
+  });
+  res.status(200).json(updateUser);
+};
