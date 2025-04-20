@@ -18,19 +18,34 @@ enum Role {
   ADMIN
 }
 
+enum ORDER_EVENT_STATUS {
+  PENDING
+  ACCEPTED
+  REJECTED
+  PROCESSING
+  PACKED
+  DISPATCHED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
 model User {
-  id        BigInt    @id @default(autoincrement())
-  hashId    String    @default(cuid())
-  name      String?
-  email     String?   @unique
-  password  String?
-  role      Role      @default(USER)
+  id              BigInt     @id @default(autoincrement())
+  hashId          String     @default(cuid())
+  name            String?
+  email           String?    @unique
+  password        String?
+  role            Role       @default(USER)
   shippingAddress BigInt?
-  defaultAddress BigInt?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Address   Address[]
-  CartItem  CartItem[]
+  defaultAddress  BigInt?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  Address         Address[]
+  CartItem        CartItem[]
+  Order           Order[]
 
   @@map("users")
 }
@@ -56,14 +71,15 @@ model Address {
 
 // create product table
 model Product {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt     @id @default(autoincrement())
   name        String
-  description String   @db.Text
+  description String     @db.Text
   price       Float
   tags        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  CartItem   CartItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  CartItem    CartItem[]
+  OrderProduct OrderProduct[]
 
   @@map("products")
 }
@@ -84,4 +100,54 @@ model CartItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("cart_items")
+}
+
+
+// create order table
+model Order {
+  id              BigInt     @id @default(autoincrement())
+  userId          BigInt
+  netAmount       Float
+  shippingAddress       String 
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // relation to User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderProducts OrderProduct[] 
+  orderEvent OrderEvent[]
+
+  @@map("orders")
+}
+
+// create order product table
+model OrderProduct {
+  id        BigInt   @id @default(autoincrement())
+  orderId   BigInt
+  productId BigInt
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation to Order
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // relation to Product
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("order_products")
+}
+
+// create order event table
+model OrderEvent {
+  id        BigInt   @id @default(autoincrement())
+  orderId   BigInt
+  status    ORDER_EVENT_STATUS @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation to Order
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_events")
 }
