@@ -30,6 +30,7 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Address   Address[]
+  CartItem  CartItem[]
 
   @@map("users")
 }
@@ -62,6 +63,25 @@ model Product {
   tags        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  CartItem   CartItem[]
 
   @@map("products")
+}
+
+// creating cart item table
+model CartItem {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt
+  productId BigInt
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation to User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // relation to Product
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("cart_items")
 }

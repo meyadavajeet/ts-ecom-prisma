@@ -7,7 +7,7 @@ import { BadRequestException } from "../exceptions/badrequest.exceptions";
 import { ErrorCode } from "../exceptions/root.exceptions";
 import { InternalServerException } from "../exceptions/internalserver.exceptions";
 import { UnprocessableEntity } from "../exceptions/validation.exception";
-import { LoginSchema, SignupSchema } from "../schema/user";
+import { LoginSchema, SignupSchema } from "../validator-schema/user";
 import { NotFoundException } from "../exceptions/notfound.exceptions";
 
 interface SingupRequestBody {

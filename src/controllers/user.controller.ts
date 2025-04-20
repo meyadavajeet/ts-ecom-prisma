@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AddressSchema, UpdateUserSchema } from "../schema/user";
+import { AddressSchema, UpdateUserSchema } from "../validator-schema/user";
 import { prismaClient } from "../app";
 import { UnAuthorizedException } from "../exceptions/unauthorized.exceptions";
 import { ErrorCode } from "../exceptions/root.exceptions";

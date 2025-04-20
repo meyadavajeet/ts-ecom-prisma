@@ -5,7 +5,7 @@ import { PORT } from "./configs/secrets";
 import startupRoutes from "./routes";
 import { PrismaClient } from "@prisma/client";
 import { errorMiddleware } from "./middlewares/error.middleware";
-import { SignupSchema } from "./schema/user";
+import { SignupSchema } from "./validator-schema/user";
 
 const app: Express = express();
 

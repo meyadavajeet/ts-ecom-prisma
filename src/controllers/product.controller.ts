@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ProductSchema } from "../schema/product";
+import { ProductSchema } from "../validator-schema/product";
 import { prismaClient } from "../app";
 import { NotFoundException } from "../exceptions/notfound.exceptions";
 import { ErrorCode } from "../exceptions/root.exceptions";
