@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { errorHandler } from "../error.handler";
-import { createProduct, deleteProductById, getAllProducts, getProductById, updateProduct } from "../controllers/product.controller";
+import {
+  createProduct,
+  deleteProductById,
+  getAllProducts,
+  getProductById,
+  searchProduct,
+  updateProduct,
+} from "../controllers/product.controller";
 import authMiddleware from "../middlewares/auth.middleware";
 import adminMiddleware from "../middlewares/admin.middleware";
 const productRoutes: Router = Router();
@@ -15,6 +22,12 @@ productRoutes.get(
   "/",
   [authMiddleware, adminMiddleware],
   errorHandler(getAllProducts)
+);
+// search product fulltext search
+productRoutes.get(
+  "/search",
+  [authMiddleware],
+  errorHandler(searchProduct)
 );
 productRoutes.get(
   "/:id",

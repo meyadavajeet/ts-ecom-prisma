@@ -74,7 +74,6 @@ export const getProductById = async (
     });
 
     res.status(200).json(product);
-    
   } catch (error) {
     throw new NotFoundException("Product not found", ErrorCode.NOT_FOUND);
   }
@@ -110,4 +109,39 @@ export const updateProduct = async (
     },
   });
   res.status(200).json(product);
+};
+
+export const searchProduct = async (req: Request, res: Response) => {
+  const { q } = req.query;
+  if (!q) {
+    res.status(400).json({ message: "Please provide a search query" });
+    return;
+  }
+  const products = await prismaClient.product.findMany({
+    where: {
+      // OR: [
+      //   { name: { contains: q as string, mode: "insensitive" } },
+      //   { description: { contains: q as string, mode: "insensitive" } },
+      //   { tags: { contains: q as string, mode: "insensitive" } },
+      // ],
+      name: {
+        contains: q as string,
+        mode: "insensitive",
+      },
+      description: {
+        contains: q as string,
+        mode: "insensitive",
+      },
+      tags: {
+        contains: q as string,
+        mode: "insensitive",
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: 0,
+    take: 10,
+  });
+  res.status(200).json(products);
 };

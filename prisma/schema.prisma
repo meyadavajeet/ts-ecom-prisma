@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -71,15 +72,17 @@ model Address {
 
 // create product table
 model Product {
-  id          BigInt     @id @default(autoincrement())
-  name        String
-  description String     @db.Text
-  price       Float
-  tags        String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  CartItem    CartItem[]
+  id           BigInt         @id @default(autoincrement())
+  name         String
+  description  String         @db.Text
+  price        Float
+  tags         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  CartItem     CartItem[]
   OrderProduct OrderProduct[]
+  // index for search optimization
+  @@index([name, description, tags])
 
   @@map("products")
 }
@@ -102,21 +105,20 @@ model CartItem {
   @@map("cart_items")
 }
 
-
 // create order table
 model Order {
-  id              BigInt     @id @default(autoincrement())
+  id              BigInt             @id @default(autoincrement())
   userId          BigInt
   netAmount       Float
-  shippingAddress       String
+  shippingAddress String
   status          ORDER_EVENT_STATUS @default(PENDING)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   // relation to User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderProducts OrderProduct[] 
-  orderEvent OrderEvent[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderProducts OrderProduct[]
+  orderEvent    OrderEvent[]
 
   @@map("orders")
 }
@@ -127,7 +129,7 @@ model OrderProduct {
   orderId   BigInt
   productId BigInt
   quantity  Int
-  price     Float @default(0.0)
+  price     Float    @default(0.0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -142,11 +144,11 @@ model OrderProduct {
 
 // create order event table
 model OrderEvent {
-  id        BigInt   @id @default(autoincrement())
+  id        BigInt             @id @default(autoincrement())
   orderId   BigInt
   status    ORDER_EVENT_STATUS @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   // relation to Order
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
