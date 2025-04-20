@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "order_products" ADD COLUMN     "price" DOUBLE PRECISION NOT NULL DEFAULT 0.0;
+
+-- AlterTable
+ALTER TABLE "orders" ADD COLUMN     "status" "ORDER_EVENT_STATUS" NOT NULL DEFAULT 'PENDING';
