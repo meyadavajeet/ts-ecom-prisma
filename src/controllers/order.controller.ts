@@ -105,6 +105,100 @@ export const createOrder = async (req: Request, res: Response) => {
     }
   });
 };
-export const getOrderById = async (req: Request, res: Response) => {};
-export const getAllOrders = async (req: Request, res: Response) => {};
-export const cancelOrder = async (req: Request, res: Response) => {};
+
+export const getOrderById = async (req: Request, res: Response) => {
+  // check if userId exist
+  if (!req?.user?.id) {
+    throw new UnAuthorizedException(
+      "User not authorized",
+      ErrorCode.UNAUTHORIZED,
+      "Please login to view order"
+    );
+  }
+  if (!req.params.id) {
+    throw new UnAuthorizedException(
+      "Order ID not provided",
+      ErrorCode.BAD_REQUEST,
+      "Please provide order ID"
+    );
+  }
+  // get order by id
+  try {
+    const order = await prismaClient.order.findFirstOrThrow({
+      where: {
+        id: +req.params.id,
+        userId: req.user.id,
+      },
+      include: {
+        orderProducts: true,
+        orderEvent: true,
+      },
+    });
+    // return order
+    res.status(200).json(order);
+  } catch (error) {
+    console.log(error);
+    throw new UnAuthorizedException(
+      "Order not found",
+      ErrorCode.NOT_FOUND,
+      "Please provide valid order ID"
+    );
+  }
+};
+
+export const getAllOrders = async (req: Request, res: Response) => {
+  // check if userId exist
+  if (!req?.user?.id) {
+    throw new UnAuthorizedException(
+      "User not authorized",
+      ErrorCode.UNAUTHORIZED,
+      "Please login to view orders"
+    );
+  }
+  // get all orders
+  const orders = await prismaClient.order.findMany({
+    where: {
+      userId: req.user.id,
+    },
+  });
+  // return orders
+  res.status(200).json(orders);
+};
+export const cancelOrder = async (req: Request, res: Response) => {
+  return await prismaClient.$transaction(async (prisma) => {
+    // check if userId exist
+    if (!req?.user?.id) {
+      throw new UnAuthorizedException(
+        "User not authorized",
+        ErrorCode.UNAUTHORIZED,
+        "Please login to cancel order"
+      );
+    }
+    if (!req.params.id) {
+      throw new UnAuthorizedException(
+        "Order ID not provided",
+        ErrorCode.BAD_REQUEST,
+        "Please provide order ID"
+      );
+    }
+    // cancel order
+    const order = await prisma.order.update({
+      where: {
+        id: +req.params.id,
+        userId: req.user.id,
+      },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+    // create order event
+    await prisma.orderEvent.create({
+      data: {
+        orderId: order.id,
+        status: "CANCELLED",
+      },
+    });
+    // return order
+    res.status(200).json(order);
+  });
+};
